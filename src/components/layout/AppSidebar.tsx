@@ -10,26 +10,33 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const sidebarItems = [
-  { icon: Book, label: "Posts", href: "/" },
-  { icon: FolderPlus, label: "Categories", href: "/categories" },
-  { icon: User, label: "Profile", href: "/profile" },
+  { icon: Book, label: "Посты", href: "/" },
+  { icon: FolderPlus, label: "Категории", href: "/categories" },
+  { icon: User, label: "Профиль", href: "/profile" },
 ];
 
 export function AppSidebar() {
+  const navigate = useNavigate();
+
+  const handleNewPost = () => {
+    navigate("/new-post");
+  };
+
   return (
     <Sidebar>
       <SidebarContent>
         <div className="p-4">
-          <Button className="w-full" size="lg">
+          <Button onClick={handleNewPost} className="w-full" size="lg">
             <Plus className="mr-2 h-4 w-4" />
-            New Post
+            Новый пост
           </Button>
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Меню</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarItems.map((item) => (

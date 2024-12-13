@@ -15,6 +15,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/categories" element={<div>Страница категорий</div>} />
+          <Route path="/profile" element={<div>Страница профиля</div>} />
+          <Route path="/new-post" element={<div>Создание нового поста</div>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
