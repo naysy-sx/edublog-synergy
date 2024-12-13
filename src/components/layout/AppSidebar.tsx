@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const sidebarItems = [
   { icon: Book, label: "Посты", href: "/" },
@@ -42,10 +42,10 @@ export function AppSidebar() {
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton asChild>
-                    <a href={item.href} className="flex items-center">
+                    <Link to={item.href} className="flex items-center">
                       <item.icon className="mr-2 h-4 w-4" />
                       <span>{item.label}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
