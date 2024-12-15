@@ -1,44 +1,23 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Plus, FolderEdit, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { CategoryList } from "./sidebar/CategoryList";
+import { NewCategoryForm } from "./sidebar/NewCategoryForm";
+import { Logo } from "./Logo";
+import { AuthSection } from "../auth/AuthSection";
+import { Link } from "react-router-dom";
+import { Home } from "lucide-react";
 
 export function AppSidebar() {
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const { data: categories } = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const createCategory = useMutation({
     mutationFn: async (name: string) => {
@@ -52,7 +31,6 @@ export function AppSidebar() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      setNewCategoryName("");
       toast({
         title: "Категория создана",
         description: "Новая категория успешно добавлена",
@@ -70,22 +48,12 @@ export function AppSidebar() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      setEditingCategory(null);
       toast({
         title: "Категория обновлена",
         description: "Название категории успешно изменено",
       });
     },
   });
-
-  const checkCategoryPosts = async (categoryId: string) => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("id")
-      .eq("category_id", categoryId);
-    if (error) throw error;
-    return data.length > 0;
-  };
 
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
@@ -101,109 +69,37 @@ export function AppSidebar() {
     },
   });
 
-  const handleCreateCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newCategoryName.trim()) {
-      createCategory.mutate(newCategoryName.trim());
-    }
-  };
-
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center justify-between px-4">
-          <h2 className="text-lg font-semibold">Категории</h2>
+          <Logo />
           <SidebarTrigger />
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <form onSubmit={handleCreateCategory} className="px-4 mb-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Новая категория"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-            />
-            <Button type="submit" size="icon">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </form>
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent rounded-md"
+          >
+            <Home className="h-4 w-4" />
+            На главную
+          </Link>
+        </div>
 
-        <SidebarMenu>
-          {categories?.map((category) => (
-            <div key={category.id} className="flex items-center justify-between px-4 py-2">
-              {editingCategory?.id === category.id ? (
-                <div className="flex gap-2 flex-1">
-                  <Input
-                    value={editingCategory.name}
-                    onChange={(e) =>
-                      setEditingCategory({ ...editingCategory, name: e.target.value })
-                    }
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      updateCategory.mutate({
-                        id: category.id,
-                        name: editingCategory.name,
-                      })
-                    }
-                  >
-                    Сохранить
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setEditingCategory(null)}
-                  >
-                    Отмена
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <SidebarMenuButton>{category.name}</SidebarMenuButton>
-                  <div className="flex gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() =>
-                        setEditingCategory({ id: category.id, name: category.name })
-                      }
-                    >
-                      <FolderEdit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Удалить категорию?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Это действие нельзя отменить. Все посты в этой категории также будут удалены.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Отмена</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteCategory.mutate(category.id)}
-                          >
-                            Удалить
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </SidebarMenu>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold px-4 mb-2">Категории</h2>
+          <NewCategoryForm onSubmit={(name) => createCategory.mutate(name)} />
+          <SidebarMenu>
+            <CategoryList
+              onEdit={(category) => updateCategory.mutate(category)}
+              onDelete={(id) => deleteCategory.mutate(id)}
+            />
+          </SidebarMenu>
+        </div>
+
+        <AuthSection />
       </SidebarContent>
     </Sidebar>
   );
