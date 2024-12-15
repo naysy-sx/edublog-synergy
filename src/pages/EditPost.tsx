@@ -3,44 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, Save, Trash } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Save } from "lucide-react";
 import { useState } from "react";
-
-interface Post {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
-  category_id: string | null;
-  learning_status: string;
-  is_private: boolean;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
+import { PostForm } from "@/components/posts/PostForm";
+import { DeletePostDialog } from "@/components/posts/DeletePostDialog";
+import { Post } from "@/types/post";
+import { Category } from "@/types/category";
 
 const EditPost = () => {
   const { id } = useParams<{ id: string }>();
@@ -134,103 +103,15 @@ const EditPost = () => {
               <Save className="mr-2 h-4 w-4" />
               Сохранить
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <Trash className="mr-2 h-4 w-4" />
-                  Удалить
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Удалить пост?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Это действие нельзя отменить. Пост будет удален навсегда.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => deleteMutation.mutate()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Удалить
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <DeletePostDialog onDelete={() => deleteMutation.mutate()} />
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <label className="text-sm font-medium">Название</label>
-            <Input
-              value={post.title}
-              onChange={(e) => setPost({ ...post, title: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Описание</label>
-            <Textarea
-              value={post.description}
-              onChange={(e) => setPost({ ...post, description: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Контент</label>
-            <Textarea
-              value={post.content || ""}
-              onChange={(e) => setPost({ ...post, content: e.target.value })}
-              className="min-h-[200px]"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">Категория</label>
-              <Select
-                value={post.category_id || ""}
-                onValueChange={(value) =>
-                  setPost({ ...post, category_id: value || null })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите категорию" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Без категории</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Статус изучения</label>
-              <Select
-                value={post.learning_status}
-                onValueChange={(value) =>
-                  setPost({ ...post, learning_status: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="not_started">Не начато</SelectItem>
-                  <SelectItem value="in_progress">В процессе</SelectItem>
-                  <SelectItem value="completed">Завершено</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
+        <PostForm
+          post={post}
+          categories={categories}
+          onPostChange={setPost}
+        />
       </div>
     </MainLayout>
   );
