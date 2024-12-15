@@ -8,6 +8,7 @@ import NewPost from "./pages/NewPost";
 import Categories from "./pages/Categories";
 import Profile from "./pages/Profile";
 import EditPost from "./pages/EditPost";
+import ViewPost from "./pages/ViewPost";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/new-post" element={<NewPost />} />
           <Route path="/edit-post/:id" element={<EditPost />} />
+          <Route path="/post/:id" element={<ViewPost />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
