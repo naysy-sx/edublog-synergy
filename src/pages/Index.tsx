@@ -2,16 +2,37 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { toast } = useToast();
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -51,19 +72,17 @@ const Index = () => {
     const { error } = await supabase.from("posts").delete().eq("id", postId);
     if (error) {
       console.error("Error deleting post:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить пост",
+        variant: "destructive",
+      });
       return;
     }
-  };
-
-  const getLearningStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-500";
-      case "in_progress":
-        return "bg-yellow-500";
-      default:
-        return "bg-gray-500";
-    }
+    toast({
+      title: "Успешно",
+      description: "Пост удален",
+    });
   };
 
   const getLearningStatusText = (status: string) => {
@@ -101,42 +120,86 @@ const Index = () => {
           </Select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {posts?.map((post) => (
-            <Card key={post.id}>
-              <CardHeader>
-                <CardTitle>{post.title}</CardTitle>
-                <CardDescription>{post.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {post.categories && (
-                  <Badge variant="secondary" className="mb-2">
-                    {post.categories.name}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Дата</TableHead>
+              <TableHead>Название</TableHead>
+              <TableHead>Описание</TableHead>
+              <TableHead>Категория</TableHead>
+              <TableHead>Статус</TableHead>
+              <TableHead className="text-right">Действия</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {posts?.map((post) => (
+              <TableRow key={post.id}>
+                <TableCell>
+                  {format(new Date(post.created_at), "dd.MM.yyyy")}
+                </TableCell>
+                <TableCell>
+                  <a
+                    href={`/post/${post.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {post.title}
+                  </a>
+                </TableCell>
+                <TableCell>{post.description}</TableCell>
+                <TableCell>
+                  {post.categories && (
+                    <Badge variant="secondary">
+                      {post.categories.name}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={post.learning_status === "completed" ? "default" : "secondary"}
+                  >
+                    {getLearningStatusText(post.learning_status)}
                   </Badge>
-                )}
-                <Badge className={getLearningStatusColor(post.learning_status)}>
-                  {getLearningStatusText(post.learning_status)}
-                </Badge>
-              </CardContent>
-              <CardFooter className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleEditPost(post.id)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleDeletePost(post.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEditPost(post.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Удалить пост?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Это действие нельзя отменить. Пост будет удален безвозвратно.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Отмена</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeletePost(post.id)}
+                          >
+                            Удалить
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </MainLayout>
   );
