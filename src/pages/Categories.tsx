@@ -63,15 +63,21 @@ const Categories = () => {
   const { data: postsCount } = useQuery({
     queryKey: ["categoriesPostsCount"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: posts, error } = await supabase
         .from("posts")
-        .select("category_id, count(*)", { count: "exact" })
-        .group("category_id");
+        .select("category_id");
+      
       if (error) throw error;
-      return data.reduce((acc, curr) => {
-        acc[curr.category_id] = curr.count;
-        return acc;
-      }, {} as Record<string, number>);
+      
+      // Count posts per category manually
+      const counts: Record<string, number> = {};
+      posts.forEach(post => {
+        if (post.category_id) {
+          counts[post.category_id] = (counts[post.category_id] || 0) + 1;
+        }
+      });
+      
+      return counts;
     },
   });
 
