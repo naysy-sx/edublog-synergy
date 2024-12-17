@@ -4,15 +4,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PostsTable } from "@/components/posts/PostsTable";
 import { CategoryFilter } from "@/components/posts/CategoryFilter";
+import { getAllPosts, deletePost, syncWithServer } from "@/utils/indexedDB";
 
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { toast } = useToast();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncWithServer(); // Sync when coming back online
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -26,39 +44,63 @@ const Index = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ["posts", selectedCategory],
     queryFn: async () => {
-      let query = supabase.from("posts").select(`
-        *,
-        categories (
-          id,
-          name
-        )
-      `);
+      try {
+        if (isOnline) {
+          let query = supabase.from("posts").select(`
+            *,
+            categories (
+              id,
+              name
+            )
+          `);
 
-      if (selectedCategory !== "all") {
-        query = query.eq("category_id", selectedCategory);
+          if (selectedCategory !== "all") {
+            query = query.eq("category_id", selectedCategory);
+          }
+
+          const { data, error } = await query;
+          if (error) throw error;
+          return data;
+        } else {
+          // Use IndexedDB when offline
+          const offlinePosts = await getAllPosts();
+          if (selectedCategory === "all") {
+            return offlinePosts;
+          }
+          return offlinePosts.filter(post => post.category_id === selectedCategory);
+        }
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        // Fallback to IndexedDB
+        const offlinePosts = await getAllPosts();
+        return selectedCategory === "all" 
+          ? offlinePosts 
+          : offlinePosts.filter(post => post.category_id === selectedCategory);
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
     },
   });
 
   const handleDeletePost = async (postId: string) => {
-    const { error } = await supabase.from("posts").delete().eq("id", postId);
-    if (error) {
+    try {
+      if (isOnline) {
+        const { error } = await supabase.from("posts").delete().eq("id", postId);
+        if (error) throw error;
+      }
+      
+      await deletePost(postId);
+      
+      toast({
+        title: "Успешно",
+        description: "Пост удален",
+      });
+    } catch (error) {
       console.error("Error deleting post:", error);
       toast({
         title: "Ошибка",
         description: "Не удалось удалить пост",
         variant: "destructive",
       });
-      return;
     }
-    toast({
-      title: "Успешно",
-      description: "Пост удален",
-    });
   };
 
   if (isLoading) {
@@ -71,6 +113,11 @@ const Index = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-bold">Ваше пространство для обучения</h1>
           <div className="flex items-center gap-4">
+            {!isOnline && (
+              <div className="text-yellow-600 bg-yellow-100 px-3 py-1 rounded-md">
+                Офлайн режим
+              </div>
+            )}
             <CategoryFilter
               categories={categories || []}
               selectedCategory={selectedCategory}
