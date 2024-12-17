@@ -43,8 +43,8 @@ export const addToSyncQueue = async (operation: string, data: any) => {
 
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.ready;
-    if ('sync' in registration && 'register' in registration.sync) {
-      await registration.sync.register('sync-posts');
+    if ('sync' in registration && typeof (registration as any).sync?.register === 'function') {
+      await (registration as any).sync.register('sync-posts');
     } else {
       // Fallback for browsers that don't support background sync
       await syncWithServer();
