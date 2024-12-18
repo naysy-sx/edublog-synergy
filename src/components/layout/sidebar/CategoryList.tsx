@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const CategoryList = ({
   onEdit,
@@ -24,6 +25,7 @@ export const CategoryList = ({
   onEdit: (category: { id: string; name: string }) => void;
   onDelete: (id: string) => void;
 }) => {
+  const navigate = useNavigate();
   const [editingCategory, setEditingCategory] = useState<{
     id: string;
     name: string;
@@ -37,6 +39,10 @@ export const CategoryList = ({
       return data;
     },
   });
+
+  const handleCategoryClick = (categoryId: string) => {
+    navigate(`/?category=${categoryId}`);
+  };
 
   return (
     <>
@@ -69,7 +75,9 @@ export const CategoryList = ({
             </div>
           ) : (
             <>
-              <SidebarMenuButton>{category.name}</SidebarMenuButton>
+              <SidebarMenuButton onClick={() => handleCategoryClick(category.id)}>
+                {category.name}
+              </SidebarMenuButton>
               <div className="flex gap-2">
                 <Button
                   size="icon"

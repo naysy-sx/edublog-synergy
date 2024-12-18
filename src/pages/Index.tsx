@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PostsTable } from "@/components/posts/PostsTable";
@@ -12,9 +12,16 @@ import { getAllPosts, deletePost, syncWithServer } from "@/utils/indexedDB";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get("category") || "all";
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl);
   const { toast } = useToast();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Update selected category when URL changes
+  useEffect(() => {
+    setSelectedCategory(categoryFromUrl);
+  }, [categoryFromUrl]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -64,18 +71,20 @@ const Index = () => {
         } else {
           // Use IndexedDB when offline
           const offlinePosts = await getAllPosts();
+          const result = await offlinePosts;
           if (selectedCategory === "all") {
-            return offlinePosts;
+            return result;
           }
-          return offlinePosts.filter(post => post.category_id === selectedCategory);
+          return result.filter(post => post.category_id === selectedCategory);
         }
       } catch (error) {
         console.error("Error fetching posts:", error);
         // Fallback to IndexedDB
         const offlinePosts = await getAllPosts();
+        const result = await offlinePosts;
         return selectedCategory === "all" 
-          ? offlinePosts 
-          : offlinePosts.filter(post => post.category_id === selectedCategory);
+          ? result 
+          : result.filter(post => post.category_id === selectedCategory);
       }
     },
   });
@@ -103,6 +112,10 @@ const Index = () => {
     }
   };
 
+  const handleCategoryChange = (categoryId: string) => {
+    navigate(`/?category=${categoryId}`);
+  };
+
   if (isLoading) {
     return <div>Загрузка...</div>;
   }
@@ -121,7 +134,7 @@ const Index = () => {
             <CategoryFilter
               categories={categories || []}
               selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
+              onCategoryChange={handleCategoryChange}
             />
             <Button onClick={() => navigate("/new-post")}>
               <Plus className="mr-2 h-4 w-4" /> Новый пост
