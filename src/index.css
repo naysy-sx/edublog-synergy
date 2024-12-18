@@ -35,4 +35,9 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+
+  /* Ensure dropdowns have solid background */
+  [data-radix-popper-content-wrapper] {
+    @apply bg-popover border rounded-md shadow-md;
+  }
 }

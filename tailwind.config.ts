@@ -44,6 +44,10 @@ export default {
           DEFAULT: "#f8fafc",
           foreground: "#0f172a",
         },
+        popover: {
+          DEFAULT: "#ffffff",
+          foreground: "#0f172a",
+        },
         card: {
           DEFAULT: "#ffffff",
           foreground: "#0f172a",
